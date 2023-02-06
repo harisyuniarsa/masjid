@@ -1,0 +1,180 @@
+db_client := "tr_masjid_premium"
+aksiCreatedatabase := func(){
+  res := {}
+  lsq := text.split(string(os.read_file("modules/masjid/db/masjid_data.sql")),";")
+  for q in lsq{
+    lssqry := text.split(q,"\n")
+    q = ""
+    for sqry in lssqry{
+      q += text.trim(text.trim(sqry," "),"\r")+"\n"
+    }
+    q = text.trim(q,"\n")
+    q = text.replace(q,"{db_client}",db_client,-1)
+    q = text.replace(q,"md5('hydapps^&*90')",md5("hydapps^&*90"),-1)
+    if(text.to_lower(q)[:6]=="create"){
+      db.QCreate(q[6:len(q)],G_hdbconn)
+    } else if(text.to_lower(q)[:6]=="insert"){
+      db.QInsert(q[6:len(q)],G_hdbconn)
+    } else if(text.to_lower(q)[:6]=="update"){
+      db.QUpdate(q[6:len(q)],G_hdbconn)
+    } else if(text.to_lower(q)[:6]=="delete"){
+      db.QDelete(q[6:len(q)],G_hdbconn)
+    } else if(text.to_lower(q)[:4]=="drop"){
+      db.QDrop(q[4:len(q)],G_hdbconn)
+    }
+  }
+  return res
+}
+aksiLoadkotamyquran := func(){
+  pd := G_param["GET"]["procdate"]
+  pd = convertInputToDate(pd)
+  ymd := getYMD(pd)
+  cmdri := "CM0001"
+  qry :=`table if not exists `+db_client+`.scheduleprayer_`+cmdri+`(
+      ucr varchar(100),
+      dcr datetime,
+      icr varchar(100),
+      uch varchar(100),
+      dch datetime,
+      ich varchar(100),
+      ulm varchar(100),
+      dlm datetime,
+      ilm varchar(100),
+      hijridate varchar(20),
+      hijridatedesc varchar(100),
+      gregdate varchar(20),
+      gregdatedesc varchar(100),
+      cmid varchar(20),
+      locid varchar(20),
+      lockey varchar(20),
+      timezone varchar(100),
+      imsak varchar(5),
+      subuh varchar(5),
+      terbit varchar(5),
+      dhuha varchar(5),
+      dzuhur varchar(5),
+      ashar varchar(5),
+      sunset varchar(5),
+      maghrib varchar(5),
+      isya varchar(5),
+      firstthird varchar(5),
+      midnight varchar(5),
+      lastthird varchar(5)
+      )`
+  db.QCreate(qry,G_hdbconn)
+  qry = `from `+db_client+`.scheduleprayer_`+cmdri
+  db.QDelete(qry,G_hdbconn)
+  curl := import("curl")
+  res := {}
+  pathurl := `https://api.myquran.com/v1/sholat/kota/cari/%20`
+  resdata := json.decode(curl.get(pathurl))
+  if(!is_error(resdata)){
+    qry = `from `+db_client+`.locationlonlat`
+    db.QDelete(qry,G_hdbconn)
+    for data in resdata["data"]{
+      qry = `into `+db_client+`.locationlonlat (ucr,dcr,icr,lockey,locname) values 
+        ('SYSTEM','`+string(getTimeNow())[:19]+`','`+G_param["GLOBAL"]["ipclient"]+`','`+data["id"]+`','`+data["lokasi"]+`')
+        primarykey_id locid
+        digitcounter_id 5
+        startfrom_id 1
+        prefix_id 'LOC'`
+      resid := db.QInsertWithID(qry,G_hdbconn)
+      pathurl = "https://api.myquran.com/v1/sholat/jadwal/"+data["id"]+"/"+ymd[:4]+"/"+ymd[4:6]
+      fmt.println(pathurl)
+      resdatamonth := json.decode(curl.get(pathurl))
+      if(!is_error(resdatamonth)){
+        if(resdatamonth["data"]["daerah"]==undefined){
+          continue
+        }
+        daerah := resdatamonth["data"]["daerah"]
+        lonlat := resdatamonth["data"]["koordinat"]
+        qry = db_client+`.locationlonlat set locdesc='`+daerah+`',lon='`+lonlat["lon"]+`',lat='`+lonlat["lat"]+`' 
+          where locid='`+resid+`'`
+        db.QUpdate(qry,G_hdbconn)
+        datamonth := resdatamonth["data"]["jadwal"]
+        for datam in datamonth{
+          qry = `into `+db_client+`.scheduleprayer_`+cmdri+`
+            (ucr,dcr,icr,gregdate,cmid,locid,lockey,imsak,subuh,terbit,dhuha,dzuhur,ashar,sunset,maghrib,isya)
+            values 
+            ('SYSTEM','`+string(getTimeNow())[:19]+`','`+G_param["GLOBAL"]["ipclient"]+`',
+            '`+datam["date"]+`','`+cmdri+`','`+resid+`','`+data["id"]+`',
+            '`+datam["imsak"]+`','`+datam["subuh"]+`','`+datam["terbit"]+`',
+            '`+datam["dhuha"]+`','`+datam["dzuhur"]+`','`+datam["ashar"]+`',
+            '`+datam["maghrib"]+`','`+datam["maghrib"]+`','`+datam["isya"]+`')`
+          db.QInsert(qry,G_hdbconn)
+        }
+      }
+    }
+  } else {
+    res["echo"] = "error"
+  }
+  return res
+}
+changeformatdate := func(datein){
+  dateout := ""+datein[3:5]+"-"+datein[:2]
+  return dateout
+}
+aksiLoadhijridate := func(){
+  pd := G_param["GET"]["procdate"]
+  pd = convertInputToDate(pd)
+  ymd := getYMD(pd)
+  curl := import("curl")
+  res := {}
+  jktlonlat := {"lon":"106.83105","lat":"-6.1700888888888885"}
+  lastdate := times.add_date(pd,1,0,0)
+  for int(ymd)<int(getYMD(lastdate)){
+    pathurl := `http://api.aladhan.com/v1/calendar?latitude=`+jktlonlat["lat"]+`&longitude=`+jktlonlat["lon"]+`&method=2&month=`+string(int(ymd[4:6]),"")+`&year=`+ymd[:4]
+    resdata := json.decode(curl.get(pathurl))
+    if(!is_error(resdata)){
+      for data in resdata["data"]{
+        greg := convertDateviewtodb(data["date"]["gregorian"]["date"])
+        hijri := convertDateviewtodb(data["date"]["hijri"]["date"])
+        qry := `from `+db_client+`.gregtohijri where gregdate='`+greg+`'`
+        db.QDelete(qry,G_hdbconn)
+        qry = `into `+db_client+`.gregtohijri (ucr,dcr,icr,gregdate,hijridate) values 
+          ('SYSTEM','`+string(getTimeNow())[:19]+`','`+G_param["GLOBAL"]["ipclient"]+`',
+          '`+greg+`','`+hijri+`')`
+        db.QInsert(qry,G_hdbconn)
+      }
+    } else {
+      res["echo"] = "error"
+    }
+    pd = times.add_date(pd,0,0,15)
+    ymd = getYMD(pd)
+  }
+  return res
+}
+aksiLoadtimezone := func(){
+  pd := G_param["GET"]["procdate"]
+  pd = convertInputToDate(pd)
+  ymd := getYMD(pd)
+  curl := import("curl")
+  res := {}
+  qry := `* from `+db_client+`.locationlonlat where timezone=''`
+  rows := db.queryallresult(qry,G_hdbconn)
+  for row in rows{
+    pathurl := `http://api.aladhan.com/v1/calendar?latitude=`+row["lat"]+`&longitude=`+row["lon"]+`&method=2&month=`+string(int(ymd[4:6]),"")+`&year=`+ymd[:4]
+    resdata := json.decode(curl.get(pathurl))
+    if(!is_error(resdata)){
+      for data in resdata["data"]{
+        if(data["meta"]!=undefined){
+          qry = db_client+`.locationlonlat set timezone='`+data["meta"]["timezone"]+`' where locid='`+row["locid"]+`'`
+          db.QUpdate(qry,G_hdbconn)
+        }
+      }
+    } else {
+      res["echo"] = "error"
+    }
+  }
+  return res
+}
+/*
+https://aladhan.com/prayer-times-api
+https://api.aladhan.com/v1/methods
+https://aladhan.com/calculation-methods
+http://api.aladhan.com/v1/calendar?latitude=51.508515&longitude=-0.1254872&method=2&month=4&year=2017
+
+https://api.myquran.com/v1/sholat/jadwal/1301/2023/01
+http://localhost:8081/masjid/init/createdatabase
+http://localhost:8081/masjid/init/loadkotamyquran
+*/

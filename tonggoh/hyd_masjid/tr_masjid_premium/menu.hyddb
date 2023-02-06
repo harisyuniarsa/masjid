@@ -1,0 +1,6 @@
+menuid,menulabel,parentmenu,levelmenu,menuicon,target,menuorder,isleaf
+1,Sales,0,1,nav-icon fas fa-tachometer-alt,'null',1,0
+11,Marketplace,1,2,nav-icon fas fa-edit,/hydakur/jualbeli/form_marketplace/index,1,1
+9,Master Data,0,1,nav-icon fas fa-briefcase,'null',1,0
+91,Loyal Member,9,2,nav-icon fas fa-user-edit,/hydakur/datamaster/mastercust/index,1,1
+92,Master Produk,9,2,nav-icon ion ion-clipboard mr-1,/hydakur/datamaster/masterbarang/index,1,1

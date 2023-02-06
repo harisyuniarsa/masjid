@@ -1,0 +1,2 @@
+userid,packageid,username,userfullname,orgid,password,lastlogin,iplogin,email,emaillinkdt,emaillink,emailverified,emaildtverified,emailipverified,phone,phoneotpdt,phoneotp,phoneverified,phonedtverified,phoneipverified,roleid,islocked,failedlogin,failedloginip,failedlogin2,failedloginip2,failedlogin3,failedloginip3
+admin,AA00000008,admin,administrator core,AA00000001,ec313641e8adc3c51b98d2e33d02203c,'null','null',haris.yuniarsa@gmail.com,'null','null',V,'null','null','null','null','null',V,'null','null',admin,'null','null','null','null','null','null','null'

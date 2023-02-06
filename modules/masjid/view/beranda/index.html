@@ -1,0 +1,391 @@
+<link rel="icon" href="{{.global.urlbase}}/resources/images/favicon.ico" type="image/x-icon" />
+<script>
+  urlbase="{{.global.urlbase}}/"
+  datenowserver="{{.serverparam.datenowserver}}"
+  dategregorianformat = "{{.data.gregorianformat}}"
+  datehijriformat = "{{.data.hijriformat}}"
+  timenowserver="{{.serverparam.timenowserver}}"
+  metodekirim="{{.global.messaging_method}}"
+</script>
+
+<script src="{{.global.urlbase}}/resources/js/jquery-3.6.3.min.js"></script>
+<script src="{{.global.urlbase}}/resources/js/fungsidasar.js"></script>
+<!--
+<link rel="stylesheet" type="text/css" href="{{.global.urlbase}}/masjid/resources/js/glider/glider.css">
+<script src="{{.global.urlbase}}/masjid/resources/js/glider/glider.js"></script>
+
+<link rel="stylesheet" type="text/css" href="{{.global.urlbase}}/masjid/resources/js/timeline/timeline.css">
+<script src="{{.global.urlbase}}/masjid/resources/js/timeline/timeline.js"></script>
+
+<link rel="stylesheet" type="text/css" href="{{.global.urlbase}}/masjid/resources/js/slick/slick.css">
+<script src="{{.global.urlbase}}/masjid/resources/js/jquery-1.11.0.min.js"></script>
+<script src="{{.global.urlbase}}/masjid/resources/js/jquery-migrate-1.2.1.min.js"></script>
+
+<script src="{{.global.urlbase}}/masjid/resources/js/slick/slick.min.js"></script>
+-->
+<link rel="stylesheet" type="text/css" href="{{.global.urlbase}}/masjid/resources/js/sliderpro/slider-pro.css">
+<script src="{{.global.urlbase}}/masjid/resources/js/sliderpro/slider-pro.js"></script>
+
+<style>
+.modal {
+  display: none; /* Hidden by default */
+  position: fixed; /* Stay in place */
+  z-index: 1; /* Sit on top */
+  left: 0;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  overflow: auto; /* Enable scroll if needed */
+  background-color: rgb(0,0,0); /* Fallback color */
+  background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+}
+
+/* Modal Content/Box */
+.modal-content {
+  background-color: #fefefe;
+  margin: 15% auto; /* 15% from the top and centered */
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%; /* Could be more or less, depending on screen size */
+}
+
+/* The Close Button */
+.close {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
+}
+#table_utama tr td{
+  text-align: center
+}
+td:has(.jadwalshalat){
+  background-color:aliceblue;
+}
+.jadwalshalat{
+  color:white;
+  font-weight: bold;
+  font-size: 15pt;
+  margin:2px;
+  padding:10px;
+  background-color: brown;
+  border-radius: 10%;
+}
+.jadwalshalat.active{
+  color:black;
+  font-weight: bold;
+  font-size: 15pt;
+  margin:2px;
+  padding:10px;
+  background-color: greenyellow;
+  border-radius: 10%;
+}
+.textslider{
+  color:white
+}
+</style>
+<div id="divutama" style="margin:-10px">
+  <table width=100% id="table_utama" style="background-color: black;" cellspacing=0>
+    <tr style="background-color: black" id="headerrow">
+      <td id="table_tgl" style="font-size: 16pt;width:260px;font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif">
+        <span id="table_tgl_greg" style="color:white"></span><br />
+        <span  id="table_tgl_hijri" style="color:white"></span></td>
+      <td id="table_title" onclick="showmodal()"><br>
+        <span id="table_title_master" style="color:yellowgreen;font-size: 40pt;font-family:gill sans,sans-serif"></span><br />
+        <span  id="table_title_desc" style="color:white;font-size: 16pt;font-family:gill sans,sans-serif"></span><br>
+        <span  id="table_jadwal_acuan" style="color:white;font-size: 10pt;font-family:gill sans,sans-serif"></span><br>
+        &nbsp</td>
+      <td id="table_jam" style="font-size: 20pt;width:260px;color:white;font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" onclick="toggleFullscreen()"></td>
+    </tr>
+    <tr>
+      <td colspan="3">
+        <div class="slider-pro" id="my-slider">
+          <div class="sp-slides">
+            <div class="sp-slide">
+              <img class="sp-image" src="{{.global.urlbase}}/masjid/resources/images/alikhlasbcc/img1.jpeg"/>
+            </div>
+            
+            <div class="sp-slide">
+              <img class="sp-image" src="{{.global.urlbase}}/masjid/resources/images/alikhlasbcc/img2.jpeg"/>
+            </div>
+            
+            <div class="sp-slide">
+              <img class="sp-image" src="{{.global.urlbase}}/masjid/resources/images/alikhlasbcc/img3.jpeg"/>
+            </div>
+            <div class="sp-slide">
+              <img class="sp-image" src="{{.global.urlbase}}/masjid/resources/images/alikhlasbcc/img4.jpeg"/>
+            </div>
+            <div class="sp-slide">
+              <img class="sp-image" src="{{.global.urlbase}}/masjid/resources/images/alikhlasbcc/img5.jpeg"/>
+            </div>
+            <div class="sp-slide">
+              <img class="sp-image" src="{{.global.urlbase}}/masjid/resources/images/alikhlasbcc/img6.jpeg"/>
+            </div>
+            <div class="sp-slide">
+              <img class="sp-image" src="{{.global.urlbase}}/masjid/resources/images/alikhlasbcc/img7.jpeg"/>
+            </div>
+            <div class="sp-slide textslider">
+              <h1><br />Jadwal Imam dan Khatib Jumat</h1>
+              <h1 id="jadwalharijumat"></h1>
+              <h1 id="jadwalkhatib"></h1>
+              <h1 id="jadwalimam"></h1>
+              <h1 id="jadwalmuadzin"></h1>
+
+            </div>
+            <div class="sp-slide">
+              <iframe class="youtube_embed"
+              src="https://www.youtube.com/embed/w4Ay4lHpR4o?autoplay=0&mute=1" frameborder='0' allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture' allowfullscreen>
+              </iframe>
+            </div>
+            <div class="sp-slide">
+              <iframe class="youtube_embed"
+              src="https://www.youtube.com/embed/X2EWnA6cc-M?autoplay=0&mute=1"  frameborder='0' allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture' allowfullscreen>
+              </iframe>
+            </div>
+          </div>
+        </div>
+    </td>
+    </tr>
+    <tr id="infobarisrow">
+      <td colspan="3">
+        <div id="infobaris" style="color:white;margin:5px;font-size: 16pt;font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"></div>
+      </td>
+    </tr>
+    <tr id="footerrow">
+      <td colspan="3"><table width=100% id="table_jadwalshalat">
+          <tr>
+            <td><div class="jadwalshalat">Subuh<br>الفَجْرِ<br><span id="jadwalsubuh"></span><br><br>Iqamah<br><span id="iqamahsubuh"></span></div></td>
+            <td><div class="jadwalshalat">Terbit<br>الشروق<br><span id="jadwalterbit"></span><br><br><br><br></div></td>
+            <td><div class="jadwalshalat">Dzuhur<br>الظُّهْرِ<br><span id="jadwaldzuhur"></span><br><br>Iqamah<br><span id="iqamahdzuhur"></span></div></td>
+            <td><div class="jadwalshalat">Ashar<br>العَصْرِ<br><span id="jadwalashar"></span><br><br>Iqamah<br><span id="iqamahashar"></span></div></td>
+            <td><div class="jadwalshalat">Maghrib<br>المَغْرِبِ<br><span id="jadwalmaghrib"></span><br><br>Iqamah<br><span id="iqamahmaghrib"></span></div></td>
+            <td><div class="jadwalshalat">Isya<br>العِشَاءِ<br><span id="jadwalisya"></span><br><br>Iqamah<br><span id="iqamahisya"></span></div></td>
+        </tr>
+        </table></td>
+    </tr>
+  </table>
+  <div id="myModal" class="modal">
+
+    <!-- Modal content -->
+    <div class="modal-content">
+      <span class="close" onclick="closemodal()">&times;</span>
+      <p>Some text in the Modal..</p>
+    </div>
+
+  </div>
+  <div id="remindModal" class="modal">
+
+    <!-- Modal content -->
+    <div class="modal-content" style="text-align: center;">
+      <span class="close" onclick="closemodal()">&times;</span>
+      <p id="remindModal_content">
+        <h1 id="menujuwaktu"></h1>
+        <h1 id="hitungmundur"></h1>
+      </p>
+    </div>
+
+  </div>
+</div>
+<audio id="beepA">
+  <source src='{{.global.urlbase}}/masjid/resources/sound/beep-01a.mp3' type="audio/mpeg">
+  Your browser does not support the audio element.
+</audio>
+<audio id="beepB">
+  <source src='{{.global.urlbase}}/masjid/resources/sound/beep-09.mp3' type="audio/mpeg">
+  Your browser does not support the audio element.
+</audio>
+
+<script>
+window.addEventListener("resize", onresize);
+windowheight = window.innerHeight
+$("#table_utama").height(windowheight)
+elem = document.getElementById("divutama")
+function onresize(){
+  windowheight = window.innerHeight
+  $("#table_utama").height(windowheight)
+  //mySlider.settings.height="80vh"
+  //mySlider.resize()
+  mySlider.settings.height=windowheight-(168+38+150)
+  mySlider.resize()
+  $(".youtube_embed").height(mySlider.settings.height)
+  $(".youtube_embed").width(window.innerWidth)
+}
+function toggleFullscreen() {
+  document.getElementById("beepA").volume=0
+  document.getElementById("beepA").play()
+  if (!document.fullscreenElement &&    // alternative standard method
+  !document.mozFullScreenElement && !document.webkitFullscreenElement) {  // current working methods
+    if (elem.requestFullscreen) {
+      elem.requestFullscreen();
+    } else if (elem.mozRequestFullScreen) {
+      elem.mozRequestFullScreen();
+    } else if (elem.webkitRequestFullscreen) {
+      elem.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
+    }
+    $("#table_utama").height( window.screen.height)
+  } else {
+      if (document.cancelFullScreen) {
+        document.cancelFullScreen();
+      } else if (document.mozCancelFullScreen) {
+        document.mozCancelFullScreen();
+      } else if (document.webkitCancelFullScreen) {
+        document.webkitCancelFullScreen();
+      }
+      $("#table_utama").height(windowheight)
+  }
+}
+statupdate=true
+var dtserver =  new Date(datenowserver+" "+timenowserver);
+updateDataUtama()
+setInterval(updateDataUtama, 60*60*1000)
+function updateDataUtama(){
+  if(statupdate){
+    statupdate = false
+    sendajax("masjid/beranda/updatedatautama",{}).done(rsp => {
+      dtserver =  new Date(rsp.dateserver);
+      for (labelid in rsp.label){
+        $("#"+labelid).html(rsp.label[labelid])  
+      }
+      statupdate=true
+    })
+  }
+}
+setInterval(updatewaktuperdetik, 1000);
+function updatewaktuperdetik() {
+  dtserver.setSeconds(dtserver.getSeconds() + 1);
+  var s = dtserver.getSeconds();
+  var m = dtserver.getMinutes();
+  var h = dtserver.getHours();
+  $("#table_jam").html(("0" + h).substr(-2) + ":" + ("0" + m).substr(-2) + ":" + ("0" + s).substr(-2))
+}
+setInterval(reminderevent, 1000);
+function calcduration(stime,etime){
+  if(etime==undefined){
+    return 999
+  } else {
+    if(etime.length==5){
+      etime+=":00"
+    }
+    return (etime.substring(0,2)*60*60+etime.substring(3,5)*60+parseInt(etime.substring(6,8)))-(stime.substring(0,2)*60*60+stime.substring(3,5)*60+parseInt(stime.substring(6,8)))
+  }
+}
+lswaktu = ["terbit","dzuhur","ashar","maghrib","isya"]
+function reminderevent() {
+  menujuwaktu = ""
+  $(".jadwalshalat").removeClass("active")
+  if($("#table_jam").html().substring(0,5)<=$("#iqamahsubuh").html() || $("#table_jam").html().substring(0,5)>$("#iqamahisya").html()){
+    $(".jadwalshalat").has("#jadwalsubuh").addClass("active")
+    menujuwaktu="subuh"
+  } else {
+    for (waktu of lswaktu){
+      if($("#table_jam").html().substring(0,5)<=$("#jadwal"+waktu).html() ||
+        $("#table_jam").html().substring(0,5)<=$("#iqamah"+waktu).html()) {
+        $(".jadwalshalat").has("#jadwal"+waktu).addClass("active")
+        menujuwaktu=waktu
+        break
+      }
+    }
+  }
+  if(menujuwaktu!=""){
+    if((calcduration($("#table_jam").html(),$("#jadwal"+menujuwaktu).html())<=5*60 ||
+    calcduration($("#table_jam").html(),$("#iqamah"+menujuwaktu).html())<=5*60) && 
+    calcduration($("#table_jam").html(),$("#iqamah"+menujuwaktu).html())>0){
+      seconds = 0
+      if(calcduration($("#table_jam").html(),$("#jadwal"+menujuwaktu).html())>0){
+        $("#menujuwaktu").html("Menuju Waktu "+menujuwaktu)
+        seconds = calcduration($("#table_jam").html(),$("#jadwal"+menujuwaktu).html())
+      } else {
+        $("#menujuwaktu").html("IQAMAH "+menujuwaktu)
+        seconds = calcduration($("#table_jam").html(),$("#iqamah"+menujuwaktu).html())
+      }
+      const date = new Date(null);
+      date.setSeconds(seconds); // specify value for SECONDS here
+      $("#hitungmundur").html(date.toISOString().slice(14, 19))
+      if(modalactive=="remindModal" && seconds<10){
+        if(calcduration($("#table_jam").html(),$("#jadwal"+menujuwaktu).html())>0){
+          document.getElementById("beepA").volume=1
+          document.getElementById("beepA").play()
+        } else {
+          document.getElementById("beepB").volume=1
+          document.getElementById("beepB").play()
+        }
+      }
+      if(modalactive==""){
+        showmodal("remindModal")
+      }
+    } else {
+      if(modalactive=="remindModal"){
+        closemodal()
+      }
+    }
+  }
+}
+modalactive = ""
+  // Get the modal
+var modal = document.getElementById("myModal");
+
+// Get the <span> element that closes the modal
+var span = document.getElementsByClassName("myModal_close")[0];
+
+// When the user clicks on the button, open the modal
+function showmodal(id){
+  if(id==undefined){
+    id="myModal"
+  }
+  modal = document.getElementById(id);
+  modal.style.display="block";
+  span = document.getElementsByClassName(id+"_close")[0];
+  modalactive=id
+}
+
+// When the user clicks on <span> (x), close the modal
+function closemodal(){
+  modal.style.display = "none";
+  modalactive="";
+}
+
+// When the user clicks anywhere outside of the modal, close it
+window.onclick = function(event) {
+  if (event.target == modal) {
+    closemodal()
+  }
+}
+/*
+new Glider(document.querySelector('.glider'), {
+  slidesToShow: 1,
+  dots: '.dots',
+  draggable: true,
+  arrows: {
+    prev: '.glider-prev',
+    next: '.glider-next'
+  }
+});
+$('.js-timeline').Timeline({
+  autoplaySpeed: 300,
+  autoplay: true,
+ });
+ 
+ new Glider(document.querySelector('.glider'));
+  $('.single-item').slick({
+    width:100
+  });
+  */
+ mySlider = new SliderPro( '#my-slider', {
+    width: '100vw',
+    //autoHeight:true,
+    autoplay: true,
+    autoplayDelay:5000,
+    buttons: false,
+    arrows: true,
+    fade:true,
+    fadeDuration:1000
+  });
+  onresize()
+</script>

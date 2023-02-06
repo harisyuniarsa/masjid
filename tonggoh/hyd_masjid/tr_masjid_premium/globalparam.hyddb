@@ -1,0 +1,9 @@
+ucr,dcr,icr,uch,dch,ich,ulm,dlm,ilm,kodeparam,ketparam,nilaiparam,statusparam
+'null','null','null','null','null','null','null','null','null',lociddefault,Lokasi Default,LOC00168,S
+'null','null','null','null','null','null','null','null','null',nama_masjid,Nama Masjid,Masjid Al Ikhlas,S
+'null','null','null','null','null','null','null','null','null',alamat_masjid,Alamat Masjid,Komplek Buana Citra Ciwastra~|~ Bojongsoang~|~ Kab Bandung,S
+'null','null','null','null','null','null','null','null','null',iqamahsubuh,Waktu Tunggu Iqama Subuh,10,S
+'null','null','null','null','null','null','null','null','null',iqamahdzuhur,Waktu Tunggu Iqama Dzuhur,10,S
+'null','null','null','null','null','null','null','null','null',iqamahashar,Waktu Tunggu Iqama Ashar,10,S
+'null','null','null','null','null','null','null','null','null',iqamahmaghrib,Waktu Tunggu Iqama Maghrib,9,S
+'null','null','null','null','null','null','null','null','null',iqamahisya,Waktu Tunggu Iqama Isya,10,S

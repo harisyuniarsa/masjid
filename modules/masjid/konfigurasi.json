@@ -1,0 +1,16 @@
+{
+  "db":{
+      "mode":"hyddb",
+      "host":"hyd_masjid",
+      "port":"",
+      "dbname":"",
+      "user":"",
+      "passw":""
+    },
+  "layout":"blank",
+  "basepath":"C:/serverapp",
+  "default_kendali":"hydref/docs/dokumentasi",
+  "python_executable":"c:/python27/python.exe",
+  "php_executable":"d:/XAMPP/php/php.exe",
+  "additional_allow_extension":"mp3"
+}

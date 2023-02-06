@@ -1,0 +1,479 @@
+
+fmt := import("fmt")
+db := import("db")
+text := import("text")
+times := import("times")
+mod_email := import("email")
+json := import("json")
+G_hdbconn := db.initconn(G_dbconf)
+os := import("os")
+excel := import("excel")
+
+getInfoTempFile:=func(paramfile){
+  return os.stat("tmp/"+G_param["GLOBAL"]["idrequest"]+"/"+paramfile+G_param["FILES"][paramfile])
+}
+copyFileTemp:=func(paramfile,targetfolder,filename){
+  os.mkdir_all(targetfolder,493)
+  if(os.stat("tmp/"+G_param["GLOBAL"]["idrequest"]+"/"+paramfile+G_param["FILES"][paramfile])){
+    os.copy("tmp/"+G_param["GLOBAL"]["idrequest"]+"/"+paramfile+G_param["FILES"][paramfile],targetfolder+filename)
+  }
+}
+getDateNow := func(){
+  return times.now()
+}
+getTimeNow := func(){
+	return times.now()
+}
+getStringDateNow := func(){
+  return times.time_string(getDateNow())[:10]
+}
+getStringTimeNow := func(){
+	return times.time_string(getTimeNow())[11:19]
+}
+getDuration := func(startTime,endTime){
+	res := {}
+	ms := 1000*1000*1000
+	totalduration := times.sub(endTime,startTime)
+	res["totalduration"] = totalduration
+	res["day"] = totalduration/(24*60*60*ms)
+	totalduration = totalduration%(24*60*60*ms)
+	hour := totalduration/(60*60*ms)
+	totalduration = totalduration%(60*60*ms)
+	min := totalduration/(60*ms)
+	totalduration = totalduration%(60*ms)
+	sec := totalduration/ms
+	totalduration = totalduration%ms
+	totalduration = totalduration/(1000*1000)
+	res["time"] = text.pad_left(string(hour),2,"0")+":"+text.pad_left(string(min),2,"0")+":"+text.pad_left(string(sec),2,"0")
+	res["ms"] = string(totalduration)+"ms"
+	return res
+}
+getYMD := func(indate){
+  if !is_string(indate) {
+  //if is_time(indate) {
+    indate = times.time_string(indate)
+  }
+  return text.re_replace("-",indate[:10],"")
+}
+getDatefromYMD := func(inymd){
+  return inymd[:4]+"-"+inymd[4:6]+"-"+inymd[6:8]
+}
+setDate := func(indate){
+  if(indate==undefined){
+	indate=""
+  }
+  indate = string(indate)
+  if(indate=="%!s(<nil>)" || indate==""){
+	//return times.date(0,0,0,0,0,0,0)
+	return times.now()
+  } else {
+	  dttime := text.split(indate," ")
+	  ymd := text.split(dttime[0],"-")
+	  his := ["00","00","00"]
+	  if(len(dttime)>1){
+		dttime[1] = text.split(dttime[1],".")[0]
+		his = text.split(dttime[1],":")
+	  }
+	  return times.date(text.atoi(ymd[0]),text.atoi(ymd[1]),
+		text.atoi(ymd[2]),text.atoi(his[0]),text.atoi(his[1]),text.atoi(his[2]),0)
+  }
+}
+convertInputToDate := func(inpd){
+  res := getDateNow()
+  if(inpd==undefined){inpd="0"}
+  if(len(inpd)>9){
+    if(inpd[4:5]=="-" && inpd[7:8]=="-"){
+	  res = setDate(inpd)
+	} else {
+	  res = times.add_date(res,0,0,-text.atoi(inpd))
+	}
+  } else {
+	res = times.add_date(res,0,0,-text.atoi(inpd))
+  }
+  return res
+}
+getNextMonth := func(indate){
+  if is_string(indate) {
+    indate = setDate(indate)
+  }
+  indate = convertInputToDate(string(indate)[:7]+"-01")
+  indate = times.add_date(indate,0,1,0)
+  
+  return indate
+}
+getNextMoreMonth := func(indate,count){
+  if is_string(indate) {
+    indate = setDate(indate)
+  }
+  indate = convertInputToDate(string(indate)[:7]+"-01")
+  indate = times.add_date(indate,0,count,0)
+  
+  return indate
+}
+convertDatedbtoview := func(indate){
+  if (indate==undefined){
+    return ""
+  } else {
+    if !is_string(indate) {
+      indate = times.time_string(indate)
+    }
+    return indate[8:10]+"-"+indate[5:7]+"-"+indate[:4]
+  }
+}
+convertDateviewtodb := func(indate){
+  if (indate==undefined){
+    return ""
+  } else {
+    if !is_string(indate) {
+      indate = times.time_string(indate)
+    }
+    return indate[6:10]+"-"+indate[3:5]+"-"+indate[:2]
+  }
+}
+importCSV := func(param){
+	if(param["startfrom"]==undefined){param["startfrom"]=2}
+	if(param["delimit"]==undefined){param["delimit"]=","}
+	if(param["db"]==undefined){param["db"]=G_dbconf["dbname"]}
+	if(param["user"]==undefined){param["user"] = G_dbconf["user"]}
+	if(param["pass"]==undefined){param["pass"] = G_dbconf["passw"]}
+	farr := text.split(param["file"],"/")
+	folderfile := text.join(farr[:len(farr)-1],"/")
+	fnameext := text.split(farr[len(farr)-1],".")
+	fnameext[0] = text.re_replace("!^[a-zA-Z0-9_]*$",fnameext[0],"")
+	fnameext[0] = text.replace(fnameext[0],"(","_",-1)
+	fnameext[0] = text.replace(fnameext[0],")","_",-1)
+	fnameext[0] = text.replace(fnameext[0]," ","_",-1)
+  filesource := text.re_replace("-",fnameext[0],"_")[:64]+"."+fnameext[1]
+  os.rename(param["file"],folderfile+"/"+filesource)
+	rexec := os.exec(os.getwd()+"/speciallib/"+G_param["GLOBAL"]["os_env"]+"/mysqllib",
+	`-cleancsv=true`,
+	`-ignoreLines=`+text.itoa(text.atoi(param["startfrom"])-1),
+	`-delimiter=`+param["delimit"],`-user=`+param["user"],
+	`-pass=`+param["pass"],
+	`-db=`+param["db"],`-sourceFile=`+folderfile+"/"+filesource)
+	if(param["showexec"]==true){
+    fmt.println("C:/xampp/htdocs/fixlineauto/tambihan/miglib/mysqllib.exe",
+        `-cleancsv="true"`,
+        `-ignoreLines="`+text.itoa(text.atoi(param["startfrom"])-1)+`"`,
+        `-delimiter="`+param["delimit"]+`"`,`-user="`+param["user"]+`"`,
+        `-pass="`+param["pass"]+`"`,
+        `-db="`+param["db"],`-sourceFile="`+folderfile+"/"+filesource+`"`)
+		fmt.println(rexec.output())
+	} else {
+		rexec.output()
+	}
+	if(param["deletefileafter"]==true){
+		os.remove(folderfile+"/"+filesource)
+	}
+	filesource = text.to_lower(filesource)
+	filesource = text.split(filesource,".")
+	return filesource
+}
+genCSV := func(param){ //perlu ada fungsi ambil field secara berurut
+	hdbconn := G_hdbconn
+	if(param["dbconn"]!=undefined){
+		hdbconn = db.initconn(param["dbconn"])
+	}
+	qry := ""
+  res := {}
+  jsonres := ""
+	if(param["GLOBAL"]==undefined){
+		param["GLOBAL"]={}
+		param["GLOBAL"]["idrequest"]=1
+	}
+	t := times.time_nanosecond(getTimeNow())
+	if(param["location"]==undefined){
+		param["location"]=os.getwd()+"/public/";
+	}
+	file:="data_"+text.itoa(param["GLOBAL"]["idrequest"])+text.itoa(t)+".csv"
+	temptable := "temporarycsv_"+text.itoa(param["GLOBAL"]["idrequest"])+text.itoa(t)
+  if(text.contains(text.to_lower(param["query"])," limit ")){
+    qry = text.split(text.to_lower(param["query"])," limit ")
+    qry = qry[0]+" limit 1"
+  } else {
+    qry = param["query"]+" limit 1"
+  }
+	if(param["mode"]=="plain" || param["mode"]=="write"){
+		if(param["dbconn"]!=undefined){
+      if(param["dbconn"]["mode"]=="odbc"){
+        qry = " top 1 "+param["query"]
+      }
+    }
+	} else {
+		qry = " table if exists "+temptable
+		db.QDrop(qry,hdbconn)
+		qry = " table "+temptable+" as select "+param["query"]
+		db.QCreate(qry,hdbconn)
+		qry = " * from "+temptable+" limit 1"
+	}
+	//fmt.println(qry)
+  rowsfield := []
+  if(param["dbtarget"]=="teradata"){
+    qry = text.split(text.to_lower(param["query"])," from")[0]
+    qry = text.trim(qry, " ")
+    if(qry!="*"){
+       rowsfield = text.split(text.to_upper(qry),",")
+    }
+    for idx,field in rowsfield{
+      rowsfield[idx]=text.trim(text.trim(text.trim(field," "),"\r\n")," ")
+    }
+  } else {
+    rowsfield = db.QGetfields(qry,hdbconn)
+  }
+	fields := []
+	for _,field in rowsfield{
+		fields = append(fields, "'"+field+"' `"+field+"`")
+	}
+	if(param["mode"]=="write"){
+    fh := os.create(param["location"]+file)
+    if(rowsfield!=[]){
+      fh.write_string(text.join(rowsfield,",")+"\n")
+    }
+    hq := db.setSelect(param["query"],hdbconn)
+    for data := db.QFetch(hq);data!={};data = db.QFetch(hq){
+		  rowdata := []
+      jsonres = json.decode(string(json.encode(data)))
+      if(!is_error(jsonres)){
+        data = jsonres
+      }
+      if(rowsfield==[]){
+        for field,val in data{
+          rowsfield += [field]
+        }
+        fh.write_string(text.join(rowsfield,",")+"\n")
+      }
+      for field in rowsfield{
+		    if(data[field]==undefined){
+          data[field]=``
+        }
+        rowdata = append(rowdata,`"`+data[field]+`"`)
+		  }
+      fh.write_string(text.join(rowdata,",")+"\n")
+		}
+    /*
+    hq := db.queryallresult(param["query"],hdbconn)
+    for data in hq{
+		  rowdata := []
+      jsonres = json.decode(string(json.encode(data)))
+      if(!is_error(jsonres)){
+        data = jsonres
+      }
+      for field in rowsfield{
+		    if(data[field]==undefined){
+          data[field]=``
+        }
+        rowdata = append(rowdata,`"`+data[field]+`"`)
+		  }
+      fh.write_string(text.join(rowdata,",")+"\n")
+		}
+    */
+    
+    fh.close()
+  } else {
+    lsfield := text.join(fields,",");
+    crcsv := " into outfile '"+param["location"]+file+"' FIELDS TERMINATED BY ',' ENCLOSED BY '\"' LINES TERMINATED BY '\\n';";
+    //$fields." UNION ALL select * from (".$kbr[query].") r ".$crcsv;
+    if(param["mode"]=="plain"){
+      qry = lsfield+" UNION select * from (select "+param["query"]+") r "+crcsv
+    } else {
+      qry = lsfield+" UNION select * from "+temptable+crcsv
+    }
+    //fmt.println(qry)
+    db.queryallresult(qry,hdbconn)
+	}
+  res["filesource"]=file
+	res["filedest"]=param["location"]+file
+	fh := os.open(param["location"]+file)
+	if(!fh){
+		res["status"]="failed"
+		res["filesource"]=""
+	} else {
+		fh.close()
+		if(param["filedest"]!=undefined){
+		  os.copy(param["location"]+file,param["filedest"])
+		  os.remove(param["location"]+file)
+		  res["filedest"]=param["filedest"]
+		}
+	}
+	if(param["dbconn"]["mode"]=="mysql"){
+    qry = " table if exists "+temptable+";"
+    db.QDrop(qry,hdbconn)
+	}
+	//res["query"]= $fields." UNION ALL ".$kbr[query].$where.$crcsv
+	return res
+}
+genExcel := func(param){
+	hdbconn := G_hdbconn
+	if(param["dbconn"]!=undefined){
+		hdbconn := db.initconn(param["dbconn"])
+	}
+	qry := param["query"]
+	colpos := 1
+	rowpos := 1
+	rowsfield := []
+	res := {}
+	if(param["GLOBAL"]==undefined){
+		param["GLOBAL"]={}
+		param["GLOBAL"]["idrequest"]=1
+	}
+	t := times.time_nanosecond(getTimeNow())
+	if(param["location"]==undefined){
+		param["location"]=os.getwd()+"/public/result/"
+	}
+	if(param["GLOBAL"]["modules"]!=undefined){
+		param["location"]=os.getwd()+"/public/result/"+param["GLOBAL"]["modules"]+"/"
+	}
+	file:="data_"+text.itoa(param["GLOBAL"]["idrequest"])+text.itoa(t)+".xlsx"
+	he := ""
+	if(param["template"]!=undefined){
+		he = excel.handle(G_dbconf["sessionid"],param["template"])
+	} else {
+		he = excel.handle(G_dbconf["sessionid"])
+	}
+	if(param["colpos"]==undefined){
+		param["colpos"]=1
+	}
+	if(param["mode"]==undefined){
+		activesheet := "Sheet1"
+		rowsfield = db.QGetfields(qry,hdbconn)
+		for field in rowsfield{
+			excel.fe(he,"SetCellValue",activesheet,excel.tocolrow(colpos,rowpos),field)
+			colpos++
+		}
+		rowpos++
+		hq := db.setSelect(qry,hdbconn)
+		for data := db.QFetch(hq);data!={};data = db.QFetch(hq){
+		  colpos=param["colpos"]
+		  for field in rowsfield{
+		    excel.fe(he,"SetCellValue",activesheet,excel.tocolrow(colpos,rowpos),data[field])
+		    colpos++
+		  }
+		  rowpos++
+		}
+		excel.fe(he,"SaveAs",param["location"]+file)
+	}
+	
+	res["filesource"]=file
+	res["filedest"]=param["location"]+file
+	fh := os.open(param["location"]+file)
+	if(!fh){
+		res["status"]="failed"
+		res["filesource"]=""
+	} else {
+		fh.close()
+		if(param["filedest"]!=undefined){
+		  os.copy(param["location"]+file,param["filedest"])
+		  os.remove(param["location"]+file)
+		  res["filedest"]=param["filedest"]
+		}
+	}	
+	return res
+}
+genMSExcel := func(param){
+	t := times.time_nanosecond(getTimeNow())
+	if(param["GLOBAL"]==undefined){
+		param["GLOBAL"]={}
+		param["GLOBAL"]["idrequest"]=1
+	}
+	if(param["location"]==undefined){
+		param["location"]=os.getwd()+"/public/";
+	}
+	file:="data_"+text.itoa(param["GLOBAL"]["idrequest"])+text.itoa(t)+".vbs"
+	fullpathvbs := param["location"]+file;
+	vbsfilestr := `
+			strFile = "`+param["filetemplate"]+`"
+			Set objExcel = CreateObject("Excel.Application")
+			objExcel.Visible = True
+			Set objInstance = objExcel.Workbooks.Open(strFile)
+	`
+	for sheet,val in param["lscommand"]{
+		if(val["command"]==undefined){
+			val["command"]=""
+		}
+		vbsfilestr += `
+			Set ObjSheet = objInstance.Worksheets("`+sheet+`")
+			ObjSheet.Activate
+			`+val["command"]+`
+		`
+	}
+	savecommand := `objInstance.SaveAs "`+param["filetarget"]+`" `
+	if(param["filetarget"]==param["filetemplate"]){
+		savecommand = `objInstance.Save`
+	} else {
+		fh := os.open(param["filetarget"])
+		if(fh){
+			fh.close()
+			os.remove(param["filetarget"])
+		}
+	}
+	vbsfilestr += `
+			ObjExcel.DisplayAlerts = False
+			`+savecommand+`
+			objInstance.Close
+			ObjExcel.Quit
+			Set objInstance = Nothing
+			Set objExcel = Nothing
+		`
+	fht := os.create(fullpathvbs)
+	fht.write_string(vbsfilestr)
+	fht.close()
+	rexec := os.exec("CScript","//Nologo",fullpathvbs)
+	rexec.output_exclusive()
+	os.remove(fullpathvbs)
+}
+mapMerge := func(a,b){
+  cm := {}
+  for k,v in a {
+    cm[k]=v
+  }
+  for k,v in b {
+    cm[k]=v
+  }
+  return cm
+}
+getAllFiles := func(folder,lf){
+  if(!is_array(lf)){
+    lf=[]
+  }
+  for idx,filesource in os.glob(folder+"/*"){
+    if(filesource.directory){
+      lf = getAllFiles(folder+"/"+filesource.name,lf) //bisa begini
+    } else {
+      lf = append(lf,folder+"/"+filesource["name"]) //atau begini kaya php
+    }
+  }
+  return lf
+}
+processWA_API := func(param){
+  if(param["db"]==undefined){
+    param["db"]=G_dbconf
+  }
+  if(param["reqid"]==undefined){
+    param["reqid"]="default"
+  }
+  if(param["reqname"]==undefined){
+    param["reqname"]="default"
+  }
+  if(param["orgid"]==undefined){
+    param["orgid"]="default"
+  }
+  if(param["mode"]==undefined){
+    param["mode"]="readlisten"
+  }
+  if(param["log_execute"]){
+    fmt.println(os.getwd()+"/speciallib/"+G_param["GLOBAL"]["os_env"]+"/wa_api_multidevice",
+      `-dbtype=`+param["db"]["mode"],`-db=`+param["db"]["dbname"],
+      `-host=`+param["db"]["host"],`-port=`+param["db"]["port"],
+      `-user=`+param["db"]["user"],`-pass=`+param["db"]["passw"],
+      `-mode=`+param["mode"],`-reqid=`+param["reqid"],
+      `-reqname=`+param["reqname"],`-orgid=`+param["orgid"])
+  }
+  rexec := os.exec(os.getwd()+"/speciallib/"+G_param["GLOBAL"]["os_env"]+"/wa_api_multidevice",
+    `-dbtype=`+param["db"]["mode"],`-db=`+param["db"]["dbname"],
+    `-host=`+param["db"]["host"],`-port=`+param["db"]["port"],
+    `-user=`+param["db"]["user"],`-pass=`+param["db"]["passw"],
+    `-mode=`+param["mode"],`-reqid=`+param["reqid"],
+    `-reqname=`+param["reqname"],`-orgid=`+param["orgid"]
+    )
+  rexec.output()
+}

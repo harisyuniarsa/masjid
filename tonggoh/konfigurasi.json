@@ -1,0 +1,53 @@
+{
+  "app_title": "HYD Server",
+  "listen_port": "8081",
+  "listen_port_dev": "8082",
+  "listen_port_https": "8083",
+  "cert_ssl": "cert.pem",
+  "key_ssl": "key.pem",
+  "db": {
+    "mode": "mysql",
+    "host": "localhost",
+    "port": "3306",
+    "dbname": "core_userman",
+    "user": "root",
+    "passw": ""
+  },
+  "db":{
+      "mode":"hyddb",
+      "host":"hyd",
+      "port":"",
+      "dbname":"",
+      "user":"",
+      "passw":""
+    },
+  "session_setting": {
+    "lifetime": "3600",
+    "type": "mysql",
+    "dataconfig": {
+      "mode": "mysql",
+      "host": "localhost",
+      "port": "3306",
+      "dbname": "tr_hydakur_premium",
+      "user": "hyd_user",
+      "passw": "HYD_pass123456"
+    },
+    "type": "file",
+    "dataconfig": "./sessions",
+    "name": "hyappid"
+  },
+  "layout": "blank",
+  "basepath": "C:/serverapp",
+  "default_kendali": "core/p404",
+  "python_executable": "c:/python27/python.exe",
+  "php_executable": "c:/xampp/php/php.exe",
+  "multi_modules": "true",
+  "is_reallink_default": "true",
+  "domain_routes": {
+    "localhost:8081": "masjid/beranda/index",
+    "kotakmusikmu.com": "kotakmusikmu/home",
+    "kotakmusikmu.id": "kotakmusikmu/home",
+    "todosapp.com": "todosapp/home"
+  },
+  "additional_allow_extension": "html,css,js"
+}

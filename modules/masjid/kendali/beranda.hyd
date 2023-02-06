@@ -1,0 +1,121 @@
+curl := import("curl")
+db_client := "tr_masjid_premium"
+formatHijri := func(dt){
+  mapmonth := {"01":"Muharam","02":"Safar","03":"Rabiul Awal","04":"Rabiul Akhir","05":"Jumadil Awal",
+  "06":"Jumadil Akhir","07":"Rajab","08":"Sya'ban","09":"Ramadhan","10":"Syawal","11":"Dzulkaidah","12":"Dzulhijjah"}
+  dt = dt[8:10]+" "+mapmonth[dt[5:7]]+" "+dt[:4]+" H"
+  return dt
+}
+formatGreg := func(dt){
+  mapmonth := {"01":"Januari","02":"Februari","03":"Maret","04":"April","05":"Mei","06":"Juni",
+  "07":"Juli","08":"Agustus","09":"September","10":"Oktober","11":"November","12":"Desember"}
+  dt = dt[8:10]+" "+mapmonth[dt[5:7]]+" "+dt[:4]
+  return dt  
+}
+formatDay := func(day){
+  mapday := {"0":"Ahad","1":"Senin","2":"Selasa","3":"Rabu","4":"Kamis","5":"Jum'at","6":"Sabtu"}
+  return mapday[string(day)]
+}
+aksiUpdatedatautama := func(){
+  res := {}
+  times := import("times")
+  gparam := db.queryallresult(`* from `+db_client+`.globalparam where kodeparam='lociddefault'`,G_hdbconn)[0]
+  locid := gparam["nilaiparam"]
+  gparam = db.queryallresult(`* from `+db_client+`.globalparam where kodeparam='nama_masjid'`,G_hdbconn)[0]
+  nama := gparam["nilaiparam"]
+  gparam = db.queryallresult(`* from `+db_client+`.globalparam where kodeparam='alamat_masjid'`,G_hdbconn)[0]
+  alamat := gparam["nilaiparam"]
+  locinfo := db.queryallresult(`* from `+db_client+`.locationlonlat where locid='`+locid+`'`,G_hdbconn)[0]
+  times.setLocation(locinfo["timezone"])
+  dnow := times.now()
+  datetime := string(dnow)
+  dbdate := db.queryallresult(`* from `+db_client+`.gregtohijri where gregdate='`+datetime[:10]+`'`,G_hdbconn)[0]
+  jadwal := db.queryallresult(`* from `+db_client+`.scheduleprayer_cm0001 where gregdate='`+datetime[:10]+`' and locid='`+locid+`'`,G_hdbconn)[0]
+  if(jadwal==undefined){
+    curl.get("http:"+G_param["GLOBAL"]["urlbase"]+"/masjid/beranda/loaddataperkotamyquran/procdate/"+datetime[:10]+"/locid/"+locid)
+    jadwal = db.queryallresult(`* from tr_masjid_premium.scheduleprayer_cm0001 where gregdate='`+datetime[:10]+`' and locid='`+locid+`'`,G_hdbconn)[0]
+  }
+  jumatdate := times.add_date(dnow,0,0,5-times.time_weekday(dnow))
+  if(times.time_weekday(dnow)>5){
+    jumatdate = times.add_date(dnow,0,0,times.time_weekday(dnow))
+  }
+  jadwalpetugas := db.queryallresult(`* from `+db_client+`.officer_schedule where gregdate='`+string(jumatdate)[:10]+`'`,G_hdbconn)[0]
+  if(jadwalpetugas==undefined){
+    jadwalpetugas = {"imam":"Ustadz Budi","khatib":"Ustadz Budi","muadzin":"Bapak Ahmad"}
+  }
+  result := {"label":{"table_jam":datetime[11:19],
+      "table_tgl_greg":formatDay(times.time_weekday(dnow))+", "+formatGreg(dbdate["gregdate"]),
+      "table_tgl_hijri":formatHijri(dbdate["hijridate"]),
+      "table_title_master":nama,
+      "table_title_desc":alamat,
+      "table_jadwal_acuan":"( Berdasarkan jadwal kemenag untuk wilayah "+locinfo["locname"]+")",
+      "jadwalsubuh":jadwal["subuh"],
+      "jadwalterbit":jadwal["terbit"],
+      "jadwaldzuhur":jadwal["dzuhur"],
+      "jadwalashar":jadwal["ashar"],
+      "jadwalmaghrib":jadwal["maghrib"],
+      "jadwalisya":jadwal["isya"],
+      "jadwalharijumat":"Tanggal "+formatGreg(string(jumatdate)),
+      "jadwalimam":"Imam : "+jadwalpetugas["imam"],
+      "jadwalkhatib":"Khatib : "+jadwalpetugas["khatib"],
+      "jadwalmuadzin":"Muadzin : "+jadwalpetugas["muadzin"],
+      "infobaris":"Jum'at Tanggal "+formatGreg(string(jumatdate))+", Khatib : "+jadwalpetugas["khatib"]+", Imam : "+jadwalpetugas["imam"]+", Muadzin : "+jadwalpetugas["muadzin"]
+      },
+    "dateserver":datetime[:19]
+    }
+  mapiqama := ["subuh","dzuhur","ashar","maghrib","isya"]
+  for iqama in mapiqama{
+    rowiqama := db.queryallresult(`* from `+db_client+`.globalparam where kodeparam='iqamah`+iqama+`'`,G_hdbconn)[0]
+    tmin := (int(jadwal[iqama][:2],0)*60)+int(jadwal[iqama][3:5],0)+int(rowiqama["nilaiparam"],0)
+    minutes := tmin%60
+    hours := tmin/60
+    result["label"]["iqamah"+iqama]=text.pad_left(string(hours),2,"0")+":"+string(minutes)
+  }
+  res["echo"] = string(json.encode(result))
+  return res
+}
+aksiLoaddataperkotamyquran := func(){
+  pd := G_param["GET"]["procdate"]
+  pd = convertInputToDate(pd)
+  ymd := getYMD(pd)
+  cmdri := "CM0001"
+  locid := G_param["GET"]["locid"]
+  res := {}
+  qry := `* from `+db_client+`.locationlonlat where locid='`+locid+`'`
+  data := db.queryallresult(qry,G_hdbconn)[0]
+  lastdate := times.add_date(pd,1,0,0)
+  for int(ymd)<int(getYMD(lastdate)){
+    pathurl := "https://api.myquran.com/v1/sholat/jadwal/"+data["lockey"]+"/"+ymd[:4]+"/"+ymd[4:6]
+    resdatamonth := json.decode(curl.get(pathurl))
+    if(!is_error(resdatamonth)){
+      if(resdatamonth["status"]==false){
+        continue
+      }
+      datamonth := resdatamonth["data"]["jadwal"]
+      qry = `from `+db_client+`.scheduleprayer_`+cmdri+` where gregdate like '`+ymd[:4]+`-`+ymd[4:6]+`%'`
+      db.QDelete(qry,G_hdbconn)
+      for datam in datamonth{
+        qry = `into `+db_client+`.scheduleprayer_`+cmdri+`
+          (ucr,dcr,icr,gregdate,cmid,locid,lockey,imsak,subuh,terbit,dhuha,dzuhur,ashar,sunset,maghrib,isya)
+          values 
+          ('SYSTEM','`+string(getTimeNow())[:19]+`','`+G_param["GLOBAL"]["ipclient"]+`',
+          '`+datam["date"]+`','`+cmdri+`','`+data["locid"]+`','`+data["lockey"]+`',
+          '`+datam["imsak"]+`','`+datam["subuh"]+`','`+datam["terbit"]+`',
+          '`+datam["dhuha"]+`','`+datam["dzuhur"]+`','`+datam["ashar"]+`',
+          '`+datam["maghrib"]+`','`+datam["maghrib"]+`','`+datam["isya"]+`')`
+        db.QInsert(qry,G_hdbconn)
+      }
+    } else {
+      res["echo"] = "error"
+    }
+    pd = times.add_date(pd,0,0,15)
+    ymd = getYMD(pd)
+  }
+  return res
+}
+aksiIndex := func(){
+  res := {}
+  //res["echo"]=md5("hello")
+  res["view"]=["index"]
+  return res
+}

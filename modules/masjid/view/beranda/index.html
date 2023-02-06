@@ -10,6 +10,10 @@
 
 <script src="{{.global.urlbase}}/resources/js/jquery-3.6.3.min.js"></script>
 <script src="{{.global.urlbase}}/resources/js/fungsidasar.js"></script>
+
+<link rel="stylesheet" type="text/css" href="{{.global.urlbase}}/resources/js/select2/css/select2.min.css">
+<link rel="stylesheet" type="text/css" href="{{.global.urlbase}}/resources/js/select2-bootstrap4-theme/select2-bootstrap4.min.css">
+<script src="{{.global.urlbase}}/resources/js/select2/js/select2.full.min.js"></script>
 <!--
 <link rel="stylesheet" type="text/css" href="{{.global.urlbase}}/masjid/resources/js/glider/glider.css">
 <script src="{{.global.urlbase}}/masjid/resources/js/glider/glider.js"></script>
@@ -90,6 +94,49 @@ td:has(.jadwalshalat){
 .textslider{
   color:white
 }
+.tab {
+  overflow: hidden;
+  border: 1px solid #ccc;
+  background-color: #f1f1f1;
+}
+
+/* Style the buttons that are used to open the tab content */
+.tab button {
+  background-color: inherit;
+  float: left;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  padding: 14px 16px;
+  transition: 0.3s;
+}
+
+/* Change background color of buttons on hover */
+.tab button:hover {
+  background-color: #ddd;
+}
+
+/* Create an active/current tablink class */
+.tab button.active {
+  background-color: #ccc;
+}
+
+/* Style the tab content */
+.tabcontent {
+  display: none;
+  padding: 6px 12px;
+  border: 1px solid #ccc;
+  border-top: none;
+}
+.tabcontent {
+  animation: fadeEffect 1s; /* Fading effect takes 1 second */
+}
+
+/* Go from zero to full opacity */
+@keyframes fadeEffect {
+  from {opacity: 0;}
+  to {opacity: 1;}
+}
 </style>
 <div id="divutama" style="margin:-10px">
   <table width=100% id="table_utama" style="background-color: black;" cellspacing=0>
@@ -161,6 +208,7 @@ td:has(.jadwalshalat){
     <tr id="footerrow">
       <td colspan="3"><table width=100% id="table_jadwalshalat">
           <tr>
+            <td><div class="jadwalshalat">Imsak<br>الإِمْسَاك<br><span id="jadwalimsak"></span><br><br><br><br></div></td>
             <td><div class="jadwalshalat">Subuh<br>الفَجْرِ<br><span id="jadwalsubuh"></span><br><br>Iqamah<br><span id="iqamahsubuh"></span></div></td>
             <td><div class="jadwalshalat">Terbit<br>الشروق<br><span id="jadwalterbit"></span><br><br><br><br></div></td>
             <td><div class="jadwalshalat">Dzuhur<br>الظُّهْرِ<br><span id="jadwaldzuhur"></span><br><br>Iqamah<br><span id="iqamahdzuhur"></span></div></td>
@@ -176,7 +224,59 @@ td:has(.jadwalshalat){
     <!-- Modal content -->
     <div class="modal-content">
       <span class="close" onclick="closemodal()">&times;</span>
-      <p>Some text in the Modal..</p>
+      <h3>Setting</h3>
+      <!-- Tab links -->
+      <div class="tab">
+        <button class="tablinks" id="tab_adjustment" onclick="openTab('adjustment',event)">Penyesuaian</button>
+        <button class="tablinks" id="tab_infomasjid" onclick="openTab('infomasjid',event)">Info Masjid</button>
+        <button class="tablinks" id="tab_config" onclick="openTab('config',event)">Konfigurasi</button>
+      </div>
+
+      <!-- Tab content -->
+      <div id="adjustment" class="tabcontent">
+        <h3>Penyesuaian</h3>
+        <table>
+          <tr>
+            <td>Tanggal Hijriah</td><td>:</td><td><select id="adj_hijri" name="adj_hijri"></select></td>
+          </tr><tr>
+            <td>Jadwal Imsak</td><td>:</td><td><select id="adj_imsak" name="adj_imsak"></select></td>
+          </tr><tr>
+            <td>Jadwal Subuh</td><td>:</td><td><select id="adj_subuh" name="adj_subuh"></select></td><td>Iqamah</td><td>:</td><td><input type="number" min="-50" max="50" name="adj_isubuh" id="adj_isubuh"></td>
+          </tr><tr>
+            <td>Jadwal Terbit</td><td>:</td><td><select id="adj_terbit" name="adj_terbit"></select></td>
+          </tr><tr>
+            <td>Jadwal Dzuhur</td><td>:</td><td><select id="adj_dzuhur" name="adj_dzuhur"></select></td><td>Iqamah</td><td>:</td><td><input type="number" min="-50" max="50" name="adj_idzuhur" id="adj_idzuhur"></td>
+          </tr><tr>
+            <td>Jadwal Ashar</td><td>:</td><td><select id="adj_ashar" name="adj_ashar"></select></td><td>Iqamah</td><td>:</td><td><input type="number" min="-50" max="50" name="adj_iashar" id="adj_iashar"></td>
+          </tr><tr>
+            <td>Jadwal Maghrib</td><td>:</td><td><select id="adj_maghrib" name="adj_maghrib"></select></td><td>Iqamah</td><td>:</td><td><input type="number" min="-50" max="50" name="adj_imaghrib" id="adj_imaghrib"></td>
+          </tr><tr>
+            <td>Jadwal Isya</td><td>:</td><td><select id="adj_isya" name="adj_isya"></select></td><td>Iqamah</td><td>:</td><td><input type="number" min="-50" max="50" name="adj_iisya" id="adj_iisya"></td>
+          </tr>
+        </table>
+      </div>
+      <div id="infomasjid" class="tabcontent">
+        <h3>Informasi Masjid</h3>
+      </div>
+      <div id="config" class="tabcontent">
+        <h3>Konfigurasi</h3>
+        <table>
+          <tr><td>Kota Jadwal Shalat</td><td>:</td><td style="min-width: 200px;"><select id="config_kota" name="config_kota" multiple="multiple" onchange="refreshlocation()"></select>
+            <script>
+              $("#config_kota").select2({
+                theme:"bootstrap4",
+                maximumSelectionLength: 1,
+                ajax:{
+                  url:function(params){
+                    return '/masjid/beranda/getkota?'+params.term;
+                  },
+                  dataType:"json"
+                }
+              })
+            </script>
+          </td></tr>
+        </table>
+      </div>
     </div>
 
   </div>
@@ -248,7 +348,7 @@ setInterval(updateDataUtama, 60*60*1000)
 function updateDataUtama(){
   if(statupdate){
     statupdate = false
-    sendajax("masjid/beranda/updatedatautama",{}).done(rsp => {
+    sendajax("masjid/beranda/updatedatautama",{"locid":"{{.data.locid}}"}).done(rsp => {
       dtserver =  new Date(rsp.dateserver);
       for (labelid in rsp.label){
         $("#"+labelid).html(rsp.label[labelid])  
@@ -276,13 +376,13 @@ function calcduration(stime,etime){
     return (etime.substring(0,2)*60*60+etime.substring(3,5)*60+parseInt(etime.substring(6,8)))-(stime.substring(0,2)*60*60+stime.substring(3,5)*60+parseInt(stime.substring(6,8)))
   }
 }
-lswaktu = ["terbit","dzuhur","ashar","maghrib","isya"]
+lswaktu = ["subuh","terbit","dzuhur","ashar","maghrib","isya"]
 function reminderevent() {
   menujuwaktu = ""
   $(".jadwalshalat").removeClass("active")
-  if($("#table_jam").html().substring(0,5)<=$("#iqamahsubuh").html() || $("#table_jam").html().substring(0,5)>$("#iqamahisya").html()){
-    $(".jadwalshalat").has("#jadwalsubuh").addClass("active")
-    menujuwaktu="subuh"
+  if($("#table_jam").html().substring(0,5)<=$("#jadwalimsak").html() || $("#table_jam").html().substring(0,5)>$("#iqamahisya").html()){
+    $(".jadwalshalat").has("#jadwalimsak").addClass("active")
+    menujuwaktu="imsak"
   } else {
     for (waktu of lswaktu){
       if($("#table_jam").html().substring(0,5)<=$("#jadwal"+waktu).html() ||
@@ -388,4 +488,42 @@ $('.js-timeline').Timeline({
     fadeDuration:1000
   });
   onresize()
+  function openTab(tabName,evt) {
+    // Declare all variables
+    var i, tabcontent, tablinks;
+
+    // Get all elements with class="tabcontent" and hide them
+    tabcontent = document.getElementsByClassName("tabcontent");
+    for (i = 0; i < tabcontent.length; i++) {
+      tabcontent[i].style.display = "none";
+    }
+
+    // Get all elements with class="tablinks" and remove the class "active"
+    tablinks = document.getElementsByClassName("tablinks");
+    for (i = 0; i < tablinks.length; i++) {
+      tablinks[i].className = tablinks[i].className.replace(" active", "");
+    }
+
+    // Show the current tab, and add an "active" class to the button that opened the tab
+    document.getElementById(tabName).style.display = "block";
+    if(evt==undefined){
+      $("#tab_"+tabName).addClass("active")
+    } else {
+      evt.currentTarget.className += " active";
+    }
+  }
+  openTab("adjustment")
+  function refreshlocation(){
+    window.location=urlbase+"masjid/beranda/index/idkota/"+$("#config_kota").val()
+  }
+  lsadj = ["adj_hijri","adj_imsak","adj_subuh","adj_terbit","adj_dzuhur","adj_ashar","adj_maghrib","adj_isya"]
+  for (oadj of lsadj){
+    $("#"+oadj).html("")
+    i = -20
+    while (i<=20) {
+      $("#"+oadj).append("<option value='"+i+"'>"+i+"</option>")
+      i++
+    }
+    $("#"+oadj).val(0)
+  }
 </script>

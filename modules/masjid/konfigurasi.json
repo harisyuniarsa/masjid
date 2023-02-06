@@ -7,6 +7,7 @@
       "user":"",
       "passw":""
     },
+  "messaging_method":"POST",
   "layout":"blank",
   "basepath":"C:/serverapp",
   "default_kendali":"hydref/docs/dokumentasi",

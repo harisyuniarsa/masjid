@@ -21,6 +21,12 @@ aksiUpdatedatautama := func(){
   times := import("times")
   gparam := db.queryallresult(`* from `+db_client+`.globalparam where kodeparam='lociddefault'`,G_hdbconn)[0]
   locid := gparam["nilaiparam"]
+  if(G_param["POST"]["locid"]=="<no value>"){
+    delete(G_param["POST"],"locid")
+  }
+  if(G_param["POST"]["locid"]!=undefined){
+    locid=G_param["POST"]["locid"]
+  }
   gparam = db.queryallresult(`* from `+db_client+`.globalparam where kodeparam='nama_masjid'`,G_hdbconn)[0]
   nama := gparam["nilaiparam"]
   gparam = db.queryallresult(`* from `+db_client+`.globalparam where kodeparam='alamat_masjid'`,G_hdbconn)[0]
@@ -49,6 +55,7 @@ aksiUpdatedatautama := func(){
       "table_title_master":nama,
       "table_title_desc":alamat,
       "table_jadwal_acuan":"( Berdasarkan jadwal kemenag untuk wilayah "+locinfo["locname"]+")",
+      "jadwalimsak":jadwal["imsak"],
       "jadwalsubuh":jadwal["subuh"],
       "jadwalterbit":jadwal["terbit"],
       "jadwaldzuhur":jadwal["dzuhur"],
@@ -92,7 +99,8 @@ aksiLoaddataperkotamyquran := func(){
         continue
       }
       datamonth := resdatamonth["data"]["jadwal"]
-      qry = `from `+db_client+`.scheduleprayer_`+cmdri+` where gregdate like '`+ymd[:4]+`-`+ymd[4:6]+`%'`
+      qry = `from `+db_client+`.scheduleprayer_`+cmdri+` where gregdate like '`+ymd[:4]+`-`+ymd[4:6]+`%'
+        and locid='`+locid+`'`
       db.QDelete(qry,G_hdbconn)
       for datam in datamonth{
         qry = `into `+db_client+`.scheduleprayer_`+cmdri+`
@@ -116,6 +124,19 @@ aksiLoaddataperkotamyquran := func(){
 aksiIndex := func(){
   res := {}
   //res["echo"]=md5("hello")
+  res["param"]={"locid":G_param["GET"]["idkota"]}
   res["view"]=["index"]
+  return res
+}
+aksiGetkota := func(){
+  res := {}
+  r := {"results":[]}
+  rows := db.queryallresult(`locid,locname from `+db_client+`.locationlonlat 
+    where locname like '%`+text.to_upper(string(G_param["GET"]["term"],""))+`%' order by locname limit 100`,G_hdbconn)
+  for idx,row in rows{
+    r["results"]+=[{"id":row["locid"],"text":row["locname"]}]
+  }
+  
+  res["echo"] = string(json.encode(r))
   return res
 }

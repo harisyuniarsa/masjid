@@ -1,10 +1,24 @@
 master_listfile := ["modules/masjid/*",
   "tonggoh/konfigurasi.json","tonggoh/sisiserver.hyd","tonggoh/hyd_masjid/*",
-  "public/layout/blank.layout","public/images/favicon.ico","public/js/fungsidasar.js","public/js/jquery-3.6.3.min.js"]
+  "public/layout/blank.layout","public/images/favicon.ico",
+  "public/js/fungsidasar.js","public/js/jquery-3.6.3.min.js",
+  "public/js/select2/css/select2.min.css","public/js/select2-bootstrap4-theme/select2-bootstrap4.min.css",
+  "public/js/select2/js/select2.full.min.js"]
 getallfile := func(lf,folder){
   for idx,filesource in os.glob(folder+"/*"){
     if(filesource.directory){
       lf = getallfile(lf,folder+"/"+filesource.name) //bisa begini
+    } else {
+      lf = append(lf,folder+"/"+filesource["name"]) //atau begini kaya php
+    }
+  }
+  return lf
+}
+getallfilewithdir := func(lf,folder){
+  for idx,filesource in os.glob(folder+"/*"){
+    if(filesource.directory){
+      lf = append(lf,folder+"/"+filesource["name"]+"/")
+      lf = getallfilewithdir(lf,folder+"/"+filesource.name) //bisa begini
     } else {
       lf = append(lf,folder+"/"+filesource["name"]) //atau begini kaya php
     }
@@ -34,7 +48,7 @@ aksiGithub := func(){
     }
   }
   listfile := []
-  lsallfile := getallfile(listfile,folderdest)
+  lsallfile := getallfile(listfile,folderdest[:len(folderdest)-1])
   for file in lsallfile{
     if(text.contains(file,".DS_Store")){
       os.remove(file)
@@ -43,3 +57,81 @@ aksiGithub := func(){
   res["echo"]="Copy Successfully"
   return res
 }
+aksiSvn := func(){
+  res := {}
+  folderdest := "/Users/harisyuniarsa/Documents/SVN/masjid/"
+  master_listfile += ["hydserverhttp.exe","hydserverhttp","hydserverhttp_arm64","hydserverhttp_mac"]
+  for pattern in master_listfile{
+    lsfolder := text.split(pattern,"/")
+    os.mkdir_all(folderdest+text.join(lsfolder[:len(lsfolder)-1],"/"),493)
+    if(os.stat(pattern)){
+      os.copy(pattern,folderdest+pattern)
+    } else {
+      pattern = text.replace(pattern,"/*","",-1)
+      listfile := []
+      lsallfile := getallfile(listfile,pattern)
+      for file in lsallfile{
+        lsfolder := text.split(file,"/")
+        os.mkdir_all(folderdest+text.join(lsfolder[:len(lsfolder)-1],"/"),493)
+        if(!text.contains(file,".DS_Store")){
+          os.copy(file,folderdest+file)
+        }
+      }
+    }
+  }
+  listfile := []
+  lsallfile := getallfile(listfile,folderdest[:len(folderdest)-1])
+  for file in lsallfile{
+    if(text.contains(file,".DS_Store")){
+      os.remove(file)
+    }
+  }
+  res["echo"]="Copy Successfully"
+  return res
+}
+aksiZipapps := func(){
+  res := {}
+  folderdest := "/Users/harisyuniarsa/Documents/zipApps/masjid/"
+  coreapps := {"masjid_windows.zip":"hydserverhttp.exe",
+    "masjid_linux64.zip":"hydserverhttp",
+    "masjid_arm64.zip":"hydserverhttp_arm64",
+    "masjid_macos64.zip":"hydserverhttp_mac"}
+  for appsname,corefile in coreapps{
+    master_listfile += [corefile]
+    for pattern in master_listfile{
+      lsfolder := text.split(pattern,"/")
+      os.mkdir_all(folderdest+text.join(lsfolder[:len(lsfolder)-1],"/"),493)
+      if(os.stat(pattern)){
+        os.copy(pattern,folderdest+pattern)
+      } else {
+        pattern = text.replace(pattern,"/*","",-1)
+        listfile := []
+        lsallfile := getallfile(listfile,pattern)
+        for file in lsallfile{
+          lsfolder := text.split(file,"/")
+          os.mkdir_all(folderdest+text.join(lsfolder[:len(lsfolder)-1],"/"),493)
+          if(!text.contains(file,".DS_Store")){
+            os.copy(file,folderdest+file)
+          }
+        }
+      }
+    }
+    listfile := []
+    lsallfile := getallfile(listfile,folderdest[:len(folderdest)-1])
+    for file in lsallfile{
+      if(text.contains(file,".DS_Store")){
+        os.remove(file)
+      }
+    }
+    rexec := os.exec("./speciallib/"+G_param["GLOBAL"]["os_env"]+"/7z","a",appsname,folderdest)
+    rexec.output()
+    os.rename(appsname,text.replace(folderdest,"masjid/","",-1)+appsname)
+    //./speciallib/darwin/7z a tes.zip ./modules/masjid
+    os.remove_all(folderdest)
+  }
+  res["echo"]="Copy Successfully"
+  return res
+}
+// http://localhost:8081/masjid/copyapps/github
+// http://localhost:8081/masjid/copyapps/svn
+// http://localhost:8081/masjid/copyapps/zipapps

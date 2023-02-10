@@ -5,7 +5,7 @@ Tampilan Jadwal Shalat di Indonesia
 
 # DEMO
 - [Masjid Al Ikhlas BCC Kab Bandung](http://hydserver.my.id/masjid/beranda)
-- [Masjid Al Jabbar Bandung](http://hydserver.my.id/masjid/beranda/index/idthema/jamdigital/idmasjid/baiturrahim_riungbandung)
+- [Masjid Al Jabbar Bandung](http://hydserver.my.id/masjid/beranda/index/idthema/jamdigital/idmasjid/aljabbar_bandung)
 - [Masjid Istiqlal Jakarta](http://hydserver.my.id/masjid/beranda/index/idthema/masjidnabawi/idmasjid/istiqlal_jakarta)
 
 Source Untuk dijalankan di berbagai OS :

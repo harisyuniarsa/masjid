@@ -97,8 +97,9 @@ aksiZipapps := func(){
     "masjid_arm64.zip":"hydserverhttp_arm64",
     "masjid_macos64.zip":"hydserverhttp_mac"}
   for appsname,corefile in coreapps{
-    master_listfile += [corefile]
-    for pattern in master_listfile{
+    copylistfile := master_listfile
+    copylistfile += [corefile]
+    for pattern in copylistfile{
       lsfolder := text.split(pattern,"/")
       os.mkdir_all(folderdest+text.join(lsfolder[:len(lsfolder)-1],"/"),493)
       if(os.stat(pattern)){
@@ -123,10 +124,9 @@ aksiZipapps := func(){
         os.remove(file)
       }
     }
-    rexec := os.exec("./speciallib/"+G_param["GLOBAL"]["os_env"]+"/7z","a",appsname,folderdest)
+    rexec := os.exec("speciallib/"+G_param["GLOBAL"]["os_env"]+"/7z","a",appsname,folderdest)
     rexec.output()
     os.rename(appsname,text.replace(folderdest,"masjid/","",-1)+appsname)
-    //./speciallib/darwin/7z a tes.zip ./modules/masjid
     os.remove_all(folderdest)
   }
   res["echo"]="Copy Successfully"

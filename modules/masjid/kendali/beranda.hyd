@@ -1,5 +1,13 @@
 curl := import("curl")
 db_client := "tr_masjid_premium"
+mapmasjid := {"baiturrahim_riungbandung":{"nama":"Masjid Baiturrahim","alamat":"Jl. Riung Saluyu C, Bandung","locid":"LOC00186"},
+"baiturrahman_aceh":{"nama":"Masjid Baiturrahman Aceh","alamat":"Jl. Moh. Jam No.1, Kp. Baru, Kec. Baiturrahman, Kota Banda Aceh","locid":"LOC00019"},
+"aljabbar_bandung":{"nama":"Masjid Raya Al Jabbar","alamat":"Jl. Cimencrang No.14, Cimenerang, Kec. Gedebage, Kota Bandung","locid":"LOC00186"},
+"ukhuwah_bandung":{"nama":"Masjid Al Ukhuwah","alamat":"Jl.Wastukencana no.27, Bandung","locid":"LOC00186"},
+"istiqlal_jakarta":{"nama":"Masjid Istiqlal","alamat":"Jl. Taman Wijaya Kusuma, Ps. Baru, Kecamatan Sawah Besar","locid":"LOC00195"},
+"sheikhzayed_solo":{"nama":"Masjid Raya Sheikh Zayed Solo","alamat":"Kelurahan Gilingan, Kecamatan Banjarsari","locid":"LOC00230"},
+"ic_samarinda":{"nama":"Mesjid Islamic Center Samarinda","alamat":"Jl. Slamet Riyadi No.Samping, Tlk. Lerong Ulu","locid":"LOC00366"}}
+mapthema := {"index":"Gambar Landscape","masjidnabawi":"Masjid Nabawi","jamdigital":"Jam Digital"}
 formatHijri := func(dt){
   mapmonth := {"01":"Muharam","02":"Safar","03":"Rabiul Awal","04":"Rabiul Akhir","05":"Jumadil Awal",
   "06":"Jumadil Akhir","07":"Rajab","08":"Sya'ban","09":"Ramadhan","10":"Syawal","11":"Dzulkaidah","12":"Dzulhijjah"}
@@ -21,16 +29,22 @@ aksiUpdatedatautama := func(){
   times := import("times")
   gparam := db.queryallresult(`* from `+db_client+`.globalparam where kodeparam='lociddefault'`,G_hdbconn)[0]
   locid := gparam["nilaiparam"]
-  if(G_param["POST"]["locid"]=="<no value>"){
-    delete(G_param["POST"],"locid")
-  }
-  if(G_param["POST"]["locid"]!=undefined){
+  if(G_param["POST"]["locid"]!="<no value>"){
     locid=G_param["POST"]["locid"]
+  }
+  idmasjid := ""
+  if(G_param["POST"]["idmasjid"]!="<no value>"){
+    idmasjid=G_param["POST"]["idmasjid"]
   }
   gparam = db.queryallresult(`* from `+db_client+`.globalparam where kodeparam='nama_masjid'`,G_hdbconn)[0]
   nama := gparam["nilaiparam"]
   gparam = db.queryallresult(`* from `+db_client+`.globalparam where kodeparam='alamat_masjid'`,G_hdbconn)[0]
   alamat := gparam["nilaiparam"]
+  if(mapmasjid[idmasjid]!=undefined){
+    nama = mapmasjid[idmasjid]["nama"]
+    alamat = mapmasjid[idmasjid]["alamat"]
+    locid = mapmasjid[idmasjid]["locid"]
+  }
   locinfo := db.queryallresult(`* from `+db_client+`.locationlonlat where locid='`+locid+`'`,G_hdbconn)[0]
   times.setLocation(locinfo["timezone"])
   dnow := times.now()
@@ -124,8 +138,27 @@ aksiLoaddataperkotamyquran := func(){
 aksiIndex := func(){
   res := {}
   //res["echo"]=md5("hello")
-  res["param"]={"locid":G_param["GET"]["idkota"]}
-  res["view"]=["index"]
+  res["param"]={"locid":G_param["GET"]["idkota"],"idmasjid":G_param["GET"]["idmasjid"]}
+  res["param"]["images"]=[]
+  if(G_param["GET"]["idmasjid"]==undefined){
+    G_param["GET"]["idmasjid"]=""
+  }
+  folderid:="alikhlasbcc"
+  if(mapmasjid[G_param["GET"]["idmasjid"]]!=undefined){
+    folderid = G_param["GET"]["idmasjid"]
+  }
+  folder := "modules/masjid/library/images/"+folderid+"/"
+  mapfiles := ["*.jpeg","*.jpg","*.png"]
+  for filter in mapfiles{
+    for idx,filesource in os.glob(folder +filter){
+      res["param"]["images"]+=[G_param["GLOBAL"]["urlbase"]+"/"+text.replace(folder[7:]+filesource["name"],"/library/","/resources/",1)]
+    }
+  }
+  if(G_param["GET"]["idthema"]==undefined){
+    G_param["GET"]["idthema"]="index"
+  }
+  res["view"]=[G_param["GET"]["idthema"]]
+  
   return res
 }
 aksiGetkota := func(){
@@ -137,6 +170,31 @@ aksiGetkota := func(){
     r["results"]+=[{"id":row["locid"],"text":row["locname"]}]
   }
   
+  res["echo"] = string(json.encode(r))
+  return res
+}
+aksiGetthema := func(){
+  res := {}
+  r := {"results":[]}
+  for id,row in mapthema{
+    if(text.contains(id,text.to_lower(string(G_param["GET"]["term"],""))) || 
+      text.contains(row,text.to_lower(string(G_param["GET"]["term"],"")))){
+        r["results"]+=[{"id":id,"text":row}]
+      }
+  }
+  res["echo"] = string(json.encode(r))
+  return res
+}
+aksiGetmasjid:= func(){
+  res := {}
+  r := {"results":[]}
+  for id,row in mapmasjid{
+    if(text.contains(id,text.to_lower(string(G_param["GET"]["term"],""))) || 
+      text.contains(row["nama"],text.to_lower(string(G_param["GET"]["term"],""))) ||
+      text.contains(row["alamat"],text.to_lower(string(G_param["GET"]["term"],"")))){
+        r["results"]+=[{"id":id,"text":row["nama"]+", "+row["alamat"]}]
+      }
+  }
   res["echo"] = string(json.encode(r))
   return res
 }

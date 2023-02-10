@@ -47,7 +47,7 @@
 /* Modal Content/Box */
 .modal-content {
   background-color: #fefefe;
-  margin: 15% auto; /* 15% from the top and centered */
+  margin: 10% auto; /* 10% from the top and centered */
   padding: 20px;
   border: 1px solid #888;
   width: 80%; /* Could be more or less, depending on screen size */
@@ -155,29 +155,11 @@ td:has(.jadwalshalat){
       <td colspan="3">
         <div class="slider-pro" id="my-slider">
           <div class="sp-slides">
-            <div class="sp-slide">
-              <img class="sp-image" src="{{.global.urlbase}}/masjid/resources/images/alikhlasbcc/img1.jpeg"/>
-            </div>
-            
-            <div class="sp-slide">
-              <img class="sp-image" src="{{.global.urlbase}}/masjid/resources/images/alikhlasbcc/img2.jpeg"/>
-            </div>
-            
-            <div class="sp-slide">
-              <img class="sp-image" src="{{.global.urlbase}}/masjid/resources/images/alikhlasbcc/img3.jpeg"/>
-            </div>
-            <div class="sp-slide">
-              <img class="sp-image" src="{{.global.urlbase}}/masjid/resources/images/alikhlasbcc/img4.jpeg"/>
-            </div>
-            <div class="sp-slide">
-              <img class="sp-image" src="{{.global.urlbase}}/masjid/resources/images/alikhlasbcc/img5.jpeg"/>
-            </div>
-            <div class="sp-slide">
-              <img class="sp-image" src="{{.global.urlbase}}/masjid/resources/images/alikhlasbcc/img6.jpeg"/>
-            </div>
-            <div class="sp-slide">
-              <img class="sp-image" src="{{.global.urlbase}}/masjid/resources/images/alikhlasbcc/img7.jpeg"/>
-            </div>
+            {{ range $key, $value := .data.images }}
+              <div class="sp-slide">
+                <img class="sp-image" src="{{$value}}"/>
+              </div>
+            {{ end }}
             <div class="sp-slide textslider">
               <h1><br />Jadwal Imam dan Khatib Jumat</h1>
               <h1 id="jadwalharijumat"></h1>
@@ -261,7 +243,36 @@ td:has(.jadwalshalat){
       <div id="config" class="tabcontent">
         <h3>Konfigurasi</h3>
         <table>
-          <tr><td>Kota Jadwal Shalat</td><td>:</td><td style="min-width: 200px;"><select id="config_kota" name="config_kota" multiple="multiple" onchange="refreshlocation()"></select>
+          <tr><td>Nama Masjid</td><td>:</td><td><input type="text" id="config_nama" name="config_nama"></td></tr>
+          <tr><td>Alamat Masjid</td><td>:</td><td><input type="text" id="config_alamat" name="config_alamat" style="min-width: 500px"></td></tr>
+          <tr><td><br /></td></tr>
+          <tr><td>Thema</td><td>:</td><td style="min-width: 200px;"><select id="config_thema" name="config_thema" multiple="multiple" onchange="refreshlocation('idthema',$(this).val())"></select>
+            <script>
+              $("#config_thema").select2({
+                theme:"bootstrap4",
+                maximumSelectionLength: 1,
+                ajax:{
+                  url:function(params){
+                    return '/masjid/beranda/getthema?'+params.term;
+                  },
+                  dataType:"json"
+                }
+              })
+            </script></tr>
+          <tr><td>Masjid</td><td>:</td><td style="min-width: 200px;"><select id="config_masjid" name="config_masjid" multiple="multiple" onchange="refreshlocation('idmasjid',$(this).val())"></select>
+            <script>
+              $("#config_masjid").select2({
+                theme:"bootstrap4",
+                maximumSelectionLength: 1,
+                ajax:{
+                  url:function(params){
+                    return '/masjid/beranda/getmasjid?'+params.term;
+                  },
+                  dataType:"json"
+                }
+              })
+            </script></tr>
+          <tr><td>Wilayah Jadwal Shalat</td><td>:</td><td style="min-width: 200px;"><select id="config_kota" name="config_kota" multiple="multiple" onchange="refreshlocation('idkota',$(this).val())"></select>
             <script>
               $("#config_kota").select2({
                 theme:"bootstrap4",
@@ -348,7 +359,7 @@ setInterval(updateDataUtama, 60*60*1000)
 function updateDataUtama(){
   if(statupdate){
     statupdate = false
-    sendajax("masjid/beranda/updatedatautama",{"locid":"{{.data.locid}}"}).done(rsp => {
+    sendajax("masjid/beranda/updatedatautama",{"locid":"{{.data.locid}}","idmasjid":"{{.data.idmasjid}}"}).done(rsp => {
       dtserver =  new Date(rsp.dateserver);
       for (labelid in rsp.label){
         $("#"+labelid).html(rsp.label[labelid])  
@@ -401,7 +412,7 @@ function reminderevent() {
       if(calcduration($("#table_jam").html(),$("#jadwal"+menujuwaktu).html())>0){
         $("#menujuwaktu").html("Menuju Waktu "+menujuwaktu)
         seconds = calcduration($("#table_jam").html(),$("#jadwal"+menujuwaktu).html())
-      } else {
+      } else if(parseInt($("#iqamah"+menujuwaktu).html())>0){
         $("#menujuwaktu").html("IQAMAH "+menujuwaktu)
         seconds = calcduration($("#table_jam").html(),$("#iqamah"+menujuwaktu).html())
       }
@@ -417,7 +428,7 @@ function reminderevent() {
           document.getElementById("beepB").play()
         }
       }
-      if(modalactive==""){
+      if(modalactive=="" && seconds>0){
         showmodal("remindModal")
       }
     } else {
@@ -513,8 +524,8 @@ $('.js-timeline').Timeline({
     }
   }
   openTab("adjustment")
-  function refreshlocation(){
-    window.location=urlbase+"masjid/beranda/index/idkota/"+$("#config_kota").val()
+  function refreshlocation(param,val){
+    window.location=urlbase+"masjid/beranda/index/"+param+"/"+val
   }
   lsadj = ["adj_hijri","adj_imsak","adj_subuh","adj_terbit","adj_dzuhur","adj_ashar","adj_maghrib","adj_isya"]
   for (oadj of lsadj){
